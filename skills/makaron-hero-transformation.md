@@ -24,6 +24,7 @@ The result should feel like an original cinematic hero persona, not any existing
 Generate 5 designed frames, then assemble into a 9:16 transformation reel.
 
 ### F1 — Ordinary Selfie
+普通自拍 · 变身起点
 Baseline frame. Keep the original person as-is.
 - neutral / natural expression
 - no hero elements
@@ -32,6 +33,7 @@ Baseline frame. Keep the original person as-is.
 - no costume changes
 
 ### F2 — Awakening
+觉醒时刻 · 眼泛微光
 Same face and identity cues.
 - subtle amber / gold eye glow
 - faint energy lines near cheekbones or jaw
@@ -41,6 +43,7 @@ Same face and identity cues.
 Avoid: full suit, heavy effects, face change.
 
 ### F3 — Hero Outfit Forming
+战衣塑形 · 半透明能量编织
 Same face.
 - original energy-forged hero outfit begins forming around shoulders / torso
 - symbolic cinematic costume, not armor from any IP
@@ -50,6 +53,7 @@ Same face.
 Avoid: recognizable superhero suit, military gear, copied armor, face drift.
 
 ### F4 — Power Surge
+能量爆发 · 装甲全开
 Same face.
 - full cinematic energy release
 - outfit now complete
@@ -59,6 +63,7 @@ Same face.
 Avoid: overexposure, screaming face, horror, IP-like costume.
 
 ### F5 — Heroic Stance
+英雄定妆 · 沉着落幕
 Final composed hero portrait.
 - calm confident hero pose
 - cinematic environment, e.g. dusk skyline / mountain / abstract stage
@@ -176,6 +181,6 @@ fandom symbols, national flag motifs
 - `hero_f3_outfit_forming.png`
 - `hero_f4_power_surge.png`
 - `hero_f5_heroic_stance.png`
-- `hero_transformation.mp4` — 9:16 vertical reveal reel (12–16s total)
+- `hero_transformation.mp4` — 9:16 vertical reveal reel (12–16s)
 - `prompt_log.md`
 - `qc_report.md`
