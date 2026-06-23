@@ -23,80 +23,114 @@ metadata:
       - grok
 ---
 
-# Location Food Pop-in — 地点打卡 + 伸手 + 食物弹出
+# Location Food Pop-in — 地点打卡 + 食物弹出
 
-同一个角色在不同地点打卡，每地点独立 outfit + action + food + hold_mode，节拍切换，食物弹出。
-视频模型单次生成，不逐帧拼接。Agent 读本 SKILL.md 即可执行。
+同一个角色在不同城市打卡，每地点换装+不同食物+不同动作，节拍切换。
+**视频模型单次生成**。Agent 不得改写 prompt 模板。
 
 ## Core Concept
 
-```
-Location A: environment A + outfit A + action A → beat cut → food A in hold_mode A
-Location B: environment B + outfit B + action B → beat cut → food B in hold_mode B
-```
+多城街头打卡，每处 2–3s。环境切换→角色摆 pose→食物弹出→表情反应。不是滑动转场，是节拍 match-cut。**所有角色在画面上进行的是"拿取/接住/捧起/咬"食物这个行为——食物不是凭空浮在手上的。**
 
-每 stop ~2s。3–5 地点 = 6–10s。节拍感 match-cut。
+## Input
 
-## Input — Per Location Schema
+### 用户必传
+
+| 输入 | 说明 |
+|------|------|
+| 人物图 | 1 张 reference image |
+| locations | 2–5 个地点，JSON 数组 |
+
+### 每 location schema（用户/Agent 填入具体值）
 
 ```json
-{ "location_name": "...", "food_item": "...", "outfit": "...", "action": "...", "hold_mode": "..." }
+{
+  "location_name": "Shinjuku ramen alley at night, red lanterns, steam",
+  "food_item": "steaming tonkotsu ramen in a black bowl, chopsticks",
+  "outfit": "black zip-up jacket, black tee, AirPods",
+  "action": "holds the ramen bowl with both hands, lifts it toward camera, grins",
+  "hold_mode": "two_hands_bowl",
+  "duration_s": 2
+}
 ```
 
-`hold_mode`: `palm` | `two_hands_bowl` | `plate` | `cup` | `wrap`
+| 字段 | 必填 | 说明 |
+|------|:--:|------|
+| `location_name` | ✅ | 城市+地点+氛围 |
+| `food_item` | ✅ | 食物描述 |
+| `outfit` | ✅ | 本地点穿什么 |
+| `action` | ✅ | 拿取/接住/捧起/咬食物的具体动作（不是微笑/比耶） |
+| `hold_mode` | ✅ | palm / two_hands_bowl / plate / cup / wrap |
+| `duration_s` | ✅ | 2 或 3，总时长 6–12s |
 
 ## Safety
 
-### 食物白名单
-| 类别 | 示例 |
-|------|------|
-| 热食 | 拉面/乌冬/米饭/饺子/寿司/咖喱/汉堡/披萨/烤肉 |
-| 小食 | 鲷鱼烧/可丽饼/章鱼烧/薯条/炸鸡/甜甜圈/铜锣烧 |
-| 甜点 | 冰淇淋/蛋糕/布丁/马卡龙/棉花糖/刨冰 |
-| 水果 | 西瓜/草莓/橘子/苹果/芒果/葡萄/菠萝 |
-| 饮品 | 奶茶/果汁/咖啡/汽水/奶昔/冰沙 |
-
-### 拒绝
-❌ 武器/危险品/人体部位/性暗示手势
-❌ 真实品牌logo（KFC/McDonald's/Starbucks）/ 地图UI / 评分 / 店招牌
-❌ 未成年人 + 暗示性手势 → 直接 BLOCKED
+- ✅ 食物：拉面、甜点、小食、水果、饮料、街头小吃
+- ❌ 武器、危险品、人体部位、性暗示、品牌logo、地图UI、店招牌、评分
 
 ## Budget
 
-1. seedance / seedance-fast（主生成）
-2. kling（reroll 1）
-3. grok（reroll 2）
+| 轮次 | 模型 |
+|:--:|------|
+| 1 | seedance / seedance-fast |
+| 2 | kling |
+| 3 | grok |
 
-主生成 1 + reroll 2 = 最多 3 次。三轮全败 → BLOCKED。
+三轮全败 → BLOCKED。总次数 ≤ 3。
 
-## Prompt 模板
+## Workflow
 
-（Agent 填入 `{变量}`，其余文字不可删减）
+### Step 1 — 验证
+
+- 人物图 + locations 完整
+- 所有 location 六字段不缺
+- food_item 通过安全白名单
+- 总 duration = 各位置 duration_s 之和
+
+### Step 2 — 分析人物
+
+`analyze_image` → face + build 描述。Agent 从结果中仅提取外貌特征用于 prompt（如：发型/肤色/五官），不提取具体品牌标签。
+
+### Step 3 — 组装 prompt（❌ 禁止修改模板）
+
+Agent 读取下方 prompt 模板并逐位填入变量。**不得翻译成中文、不得改写句式、不得增删段落。**
 
 ```
-Vertical 9:16 video, single video generation with rhythmic beat-sync match-cuts between locations. No manual stitching.
+Vertical 9:16 video, single SeeDance generation, no manual stitching. Vibrant colors, city natural light, beat-sync match-cuts between locations.
 
-Character identity: <<<ref>>> — [face描述], [build描述]. Same person throughout, but outfit changes per location.
+Character: same person throughout — [FACE], [BUILD]. Outfit changes per location.
 
-[LOCATION 1 – 2s] Full scene change, new environment: {location_name}. Character wears {outfit}. {action}. Hold mode: {hold_mode}. At beat cut (white flash), {food_item} materializes into hand(s). Cut to next.
+[SCENE 1 — {dur}s] Mid-shot. Environment: {location_name}. Character wears {outfit}. {action}. Hold mode: {hold_mode}. {food_item}. Beat cut white flash. Transition to next.
 
-[LOCATION 2 – 2s] New environment: {location_name}. Same character identity. Character now wears {outfit}. {action}. Hold mode: {hold_mode}. Beat cut white flash — {food_item} materializes. Cut to next.
+[SCENE 2 — {dur}s] Mid-shot. New environment: {location_name}. Same character identity. Character now wears {outfit}. {action}. Hold mode: {hold_mode}. {food_item}. Beat cut white flash. Transition to next.
 
-…（重复 N 个 location，上限 5）…
+[SCENE 3 — {dur}s] Mid-shot. New environment: {location_name}. Same character identity. Character now wears {outfit}. {action}. Hold mode: {hold_mode}. {food_item}. Beat cut white flash. End.
 
-Style: Vertical 9:16, city natural light, vibrant saturation, rhythmic cuts. No real brand logos, no map UI, no store signage, no ratings. Character identity (face) consistent. Hands natural, 5 fingers. Food makes plausible contact with hand(s). Each location visually distinct — different environment, outfit, action, food.
+Style rules: 9:16 vertical. Natural hands with 5 fingers, no deformation. Face identity consistent across all locations — same person. Food makes realistic contact with hands — gripping, holding, lifting, not floating. Each location visually distinct: different city, different outfit, different food, different action. No brand logos, no map UI, no store signage, no ratings, no text overlay.
 ```
 
-## QC
+**赋值规则**：
+- [FACE]: from analyze_image output, concise keywords only
+- [BUILD]: from analyze_image output, concise keywords only
+- {dur}: location 的 duration_s 值 + "s"
+- 其余 {变量}: 从 locations JSON 里逐字段填入
+- 3 locations = 拼 3 个 SCENE 段落；5 locations = 拼 5 个
+- **不得修改模板的任何固定文字，不得翻译成其他语言，不得添加 Sound/音乐描述**
+
+### Step 4 — 单次视频生成
+
+`generate_video(model, prompt, reference_image, 9:16, total_duration)`
+
+### Step 5 — QC
 
 | Outcome | 条件 | 动作 |
 |---------|------|------|
-| PASS | identity一致 / 手自然 / 食物接触合理 / 地点可区分 | 交付 |
-| REROLL | 脸漂移 / 手变形 / 食物浮空 | 下一模型 retry |
-| BLOCKED | 3次全败 / identity丢失 / 违禁 | 通知 human |
+| PASS | identity一致、手自然、食物接触合理、地点可区分、动作不重复 | 交付 |
+| REROLL | 脸漂移、手变形、食物浮空、地点太像（max 2 次，按 budget 表换模型） | Retry |
+| BLOCKED | 3 轮全败、identity 丢失、违禁内容 | 通知 human |
 
 ## 输出
 
-- `location_food_popin.mp4`（视频，9:16）
-- `prompt_used.md`（实际使用的 prompt 全文）
-- `qc_report.md`（QC 结果）
+- `location_food_popin.mp4`（9:16）
+- `prompt_used.md`
+- `qc_report.md`
