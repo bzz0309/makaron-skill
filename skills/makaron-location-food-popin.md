@@ -1,150 +1,149 @@
 ---
 name: makaron-location-food-popin
-allowed-tools: [generate_image, generate_video, analyze_image]
+allowed-tools:
+  - generate_video
+  - analyze_image
 metadata:
   makaron:
     icon: "📍"
     color: "#F97316"
-    tags: [food, location, reveal, popin, checkin, transition]
+    tags:
+      - food
+      - location
+      - reveal
+      - popin
+      - checkin
+      - transition
     faceProtection: default
     defaultAspectRatio: "9:16"
+    models:
+      - seedance
+      - seedance-fast
+      - kling
+      - grok
 ---
 
 # Location Food Pop-in — 地点打卡 + 伸手 + 食物弹出
 
-Different locations, same empty-hand reach, different food pops in on the beat. Each stop is a tight 2-second reveal: location check-in → empty hand → beat cut → food appears in hand. No map, no full vlog — just the pop-in trick.
-
-Status: approved as supervised location-food-popin draft.
+同一个角色在不同地点打卡，每地点独立 outfit + action + food + hold_mode，节拍切换，食物弹出。
+**视频模型单次生成**，不逐帧拼接。Agent 读本 SKILL.md 即可执行。
 
 ## Core Concept
 
 ```
-Location A: check-in → empty hand reach → CUT → food A in hand
-Location B: check-in → empty hand reach → CUT → food B in hand
-Location C: check-in → empty hand reach → CUT → food C in hand
+Location A: environment A + outfit A + action A → beat cut → food A in hold_mode A
+Location B: environment B + outfit B + action B → beat cut → food B in hold_mode B
+Location C: environment C + outfit C + action C → beat cut → food C in hold_mode C
 ```
 
-Each stop is ~2s:
-```
-0.0–0.8s:   Location check-in + person reaches hand toward camera, hand empty
-0.8s:       BEAT CUT / snap / flash
-0.8–1.8s:   Same composition, same hand, food appears in hand
-1.8–2.0s:   Light reaction — smile, bite, or hold
-```
+每 stop ~2s。3–5 地点 = 6–10s。节拍感 match-cut。
 
-3–5 locations = 6–10s total. No map pins, no swipe transitions — just location → reach → pop-in → next location.
+## Input — Per Location Schema
 
-## Input
-
-Per location:
-- `location_name` — e.g. "Shinjuku ramen alley", "Shibuya crepe stand"
-- `food_item` — description (e.g. "tonkotsu ramen", "strawberry crepe")
-- `food_image` — optional real food photo. If provided, paste it onto the hand instead of generating food
-- `location_background` — optional background photo for the location
-- `person_reference` — reference photo of the person for face/outfit matching
-
-2–5 locations recommended, 3–4 ideal.
-
-## Safety
-
-- Food items only — no weapons, no dangerous objects, no body parts as food
-- Face preserved across all frames
-- If reference appears underage: no suggestive hand gestures → BLOCKED
-- No real brand logos on food packaging — obscured or generic
-- Real location names allowed, but do not generate real logos, storefront signage, ratings, official recommendations, or advertising endorsements. Default to generic storefront / location vibe
-
-## Budget
-
-- With `food_image` provided: max 1 prep generation + 1 retry per location
-- Without `food_image`: max 2 frame generations (prep + reveal) + 1 retry per location
-- Max video attempts: 1
-- Still failing → BLOCKED, ask human
-
-## Pipeline
-
-### Step 1 — Analyze Person Reference
-Call analyze_image. Extract: face, outfit, build. This is the constant across all locations.
-
-### Step 2 — For Each Location: Generate Check-in Prep Frame
-Generate person standing at the location, hand reaching toward camera, hand EMPTY. Same person, same outfit. Background matches location vibe. Hand is natural, palm facing camera or slightly angled, fingers open, ready to hold food. 9:16 vertical.
-
-### Step 3 — For Each Location: Prepare Food-in-Hand Frame
-- If `food_image` provided → same composition as prep frame, integrate the provided food image into the reveal frame using available image generation/editing runtime, with plausible grip/contact
-- If no food image → generate same composition, same hand, food item appears in hand
-
-### Step 4 — Verify Per-Location Alignment
-Check prep frame against food-in-hand frame for each location. Must match:
-- Same face ✓
-- Same outfit ✓
-- Same location background ✓
-- Same camera angle ✓
-- Same hand pose ✓
-- Only food differs ✓
-- Hands natural, no extra fingers ✓
-- Food not floating, contact with hand plausible ✓
-- Locations visually distinct from each other ✓
-- Same location: prep and reveal must match on everything except food ✓
-- Different locations: background may differ, but face and outfit must remain stable ✓
-
-Mismatch → REROLL (max 1 retry per location).
-
-### Step 5 — Compile Video
-Chain locations sequentially:
-```
-Location A: check-in (0.8s) → CUT → food A reveal (1.0s) → reaction (0.2s)
-Location B: check-in (0.8s) → CUT → food B reveal (1.0s) → reaction (0.2s)
-Location C: check-in (0.8s) → CUT → food C reveal (1.0s) → reaction (0.2s)
+```json
+{
+  "location_name": "Shinjuku ramen alley at night, red lanterns",
+  "food_item": "steaming tonkotsu ramen in a black bowl, chopsticks on top",
+  "outfit": "black bomber jacket over white tee, silver chain",
+  "action": "reaches both hands toward camera, ramen bowl materializes into both hands, lifts it toward lens with a grin",
+  "hold_mode": "two_hands_bowl"
+}
 ```
 
-3 locations = ~6s, 5 locations = ~10s. Beat-synced cuts. Clean snap transition between locations.
+| 字段 | 必填 | 说明 |
+|------|:--:|------|
+| `location_name` | ✅ | 地点+氛围描述 |
+| `food_item` | ✅ | 食物外观描述（需通过安全白名单） |
+| `outfit` | ✅ | 本地点穿着（可与前面不同） |
+| `action` | ✅ | 本地点动作+反应，每地点不同避免模板 |
+| `hold_mode` | ✅ | palm \| two_hands_bowl \| plate \| cup \| wrap |
 
-### Step 6 — QC
+2–5 个 location，推荐 3–4。
 
-| Outcome | Condition | Action |
-|---------|-----------|--------|
-| PASS | All pairs aligned, face consistent, hand pose natural, food makes contact, locations distinguishable, cuts on beat | Deliver |
-| REROLL | Face drift, hand deformation, food floating, location backgrounds too similar, style inconsistent (max 1 retry per location) | Regenerate |
-| BLOCKED | Cannot match prep, over budget, face lost, brand/IP, food looks disgusting | Halt |
+## Safety（Agent 强制执行）
 
-### Per-Location Pair Checklist
-- [ ] Same face
-- [ ] Same outfit
-- [ ] Same location background
-- [ ] Same camera angle
-- [ ] Same hand pose (natural, reaching toward camera)
-- [ ] Only food differs between prep and reveal
-- [ ] Hands natural, no extra fingers
-- [ ] Food not floating — plausible contact with hand
-- [ ] Location visually distinct from other locations
+食物白名单 — 仅以下类别可通过：
+- 热食：拉面/乌冬/米饭/炒面/饺子/寿司/天妇罗/咖喱/汉堡/披萨/烤肉/火锅
+- 小食：鲷鱼烧/可丽饼/章鱼烧/铜锣烧/薯条/炸鸡/甜甜圈/饼干
+- 甜点：冰淇淋/圣代/蛋糕/布丁/马卡龙/棉花糖/刨冰/巧克力
+- 水果：西瓜/菠萝/草莓/橘子/苹果/香蕉/芒果/葡萄
+- 饮品：奶茶/果汁/咖啡/汽水/奶昔/冰沙
 
-## Negative
+拒绝区（自动 BLOCKED）：
+- ❌ 武器（刀枪棍棒）、危险品、易燃物
+- ❌ 人体部位、血液、器官
+- ❌ 性暗示手势或姿势
+- ❌ 真实品牌 logo / 品牌包装（KFC / McDonald's / Starbucks 等）
+- ❌ 真实店招牌、Google/Apple Maps UI、评分星星、推荐文案
+- ❌ 未成年人 + 任何暗示性手势 → 直接 BLOCKED
 
-- No different face between prep and reveal
-- No different outfit, no different background within same location
-- No weapon or dangerous object in hand
-- No body parts as food
-- No suggestive hand gestures
-- No real brand logos or branded packaging
-- No extra fingers, no deformed hands
-- No floating food — must have plausible contact with hand
-- No face swap
-- No map UI, no fake ratings, no Google/Apple Maps branding
-- No real store logos, no real signage, no real ratings or official endorsements
+Identity：face 一致，outfit 每地点独立可变。
 
-## Delivery
+## Budget（写死）
 
-- `location_food_popin.mp4` (6–12s, 9:16)
-- `cover_frame.jpg` (from best reveal)
-- `checkin_frames/loc_01_checkin.png`, `loc_02_checkin.png`, ...
-- `reveal_frames/loc_01_reveal.png`, `loc_02_reveal.png`, ... (or original food images composited)
-- `edit_timeline.json`
+| 轮次 | 模型 | 说明 |
+|:--:|------|------|
+| 1 | seedance / seedance-fast | 主生成 |
+| 2 | kling | reroll 1 |
+| 3 | grok | reroll 2 |
+
+主生成 1 次 + reroll 2 次 = 最多 3 次尝试。三轮全败 → BLOCKED，通知 human。
+
+## Workflow（Agent 自动化）
+
+### Step 1 — 验证输入
+- 人物参考图 ≥ 1 张（必填）
+- locations ≥ 2，≤ 5
+- 每个 location 六字段完整（location_name / food_item / outfit / action / hold_mode）
+- 所有 food_item 通过食物白名单 → 否则拒绝并提示
+
+### Step 2 — 分析人物参考
+
+`analyze_image(person_reference)` → 提取：
+
+```
+Face: [性别 / 发型 / 五官特征]
+Build: [体型 / 身高比例]
+```
+
+（outfit 不在人物常量里 — 每 location 独立指定）
+
+### Step 3 — 组装视频 Prompt 模板
+
+Agent 填入 `{变量}`，其余文字不动，**不可删减**：
+
+```
+Vertical 9:16 video, single video generation with rhythmic beat-sync match-cuts between locations. No manual stitching.
+
+Character identity: <<<ref>>> — [face描述], [build描述]. Same person throughout, but outfit changes per location.
+
+[LOCATION 1 – 2s] Full scene change, new environment: {location_name}. Character wears {outfit}. {action}. Hold mode: {hold_mode}. At beat cut (white flash), {food_item} materializes into hand(s). Cut to next.
+
+[LOCATION 2 – 2s] New environment: {location_name}. Same character identity. Character now wears {outfit}. {action}. Hold mode: {hold_mode}. Beat cut white flash — {food_item} materializes. Cut to next.
+
+[LOCATION 3 – 2s] New environment: {location_name}. Same character identity. Character now wears {outfit}. {action}. Hold mode: {hold_mode}. Beat cut white flash — {food_item} materializes. Cut to next.
+
+[LOCATION 4 – 2s] New environment: {location_name}. Same character identity. Character now wears {outfit}. {action}. Hold mode: {hold_mode}. Beat cut white flash — {food_item} materializes. Cut to next.
+
+[LOCATION 5 – 2s] New environment: {location_name}. Same character identity. Character now wears {outfit}. {action}. Hold mode: {hold_mode}. Beat cut white flash — {food_item} materializes. Cut to end.
+
+Style: Vertical 9:16, city natural light, vibrant saturation, rhythmic cuts. No real brand logos, no map UI, no store signage, no ratings. Character identity (face) consistent throughout. Hands natural, 5 fingers, no deformation. Food makes plausible contact with hand(s), not floating. Each location visually distinct — different environment, outfit, action, food.
+```
+
+### Step 4 — 单次视频生成
+
+`generate_video(model, prompt, reference_image, aspect_ratio, duration)`
+
+### Step 5 — QC
+
+| Outcome | 条件 | 动作 |
+|---------|------|------|
+| PASS | identity一致、手自然、食物接触合理、地点可区分、节奏到位 | 交付 |
+| REROLL | 脸漂移、手变形、食物浮空、地点太像 | Retry（下一模型） |
+| BLOCKED | 超 budget（3 次全败）、identity 完全丢失、违禁内容 | 通知 human |
+
+## 输出
+
+- `location_food_popin.mp4`（9:16）
 - `prompt_used.md`
 - `qc_report.md`
-
-## Design Principles
-
-1. Tight 2s per stop — no filler, pure pop-in trick
-2. Same person across all locations — outfit constant, only location and food change
-3. Hand is the star — consistent reach, natural pose, anchors the reveal
-4. Real food photos prioritized — composite when available, generate only when not
-5. Locations visually distinct — each one reads as a different place instantly
