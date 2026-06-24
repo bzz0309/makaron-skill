@@ -1,3 +1,13 @@
+# Makaron Weekly Scorecard — 6/15~6/21/2026
+
+> **这是什么**：Makaron 首页 Skill 在 Facebook / Instagram 的投放数据周报。  
+> **做什么用**：记录每个上线 Skill 的曝光、互动、转化数据，判断效果好坏，决定下一步（继续投 / 改方向 / 停止）。  
+> **谁用**：bzz 负责运营和投放，V 负责方向和复盘，Tianyi 负责最终决策。  
+> **数据从哪来**：bzz 从 Facebook Ads Manager / FB Insights 导出 CSV，V from Versa 做数据核验和回填。  
+> **频率**：每周一出一次。
+
+---
+
 ## 数据来源说明
 
 | 数据类型 | 获取方式 | 状态 |
