@@ -11,35 +11,12 @@ metadata:
     tipsCount: 4
     modelPreference: [seedance, kling, gemini]
     defaultAspectRatio: "9:16"
+    defaultCoverStyle: sporty|dynamic|powerful
 ---
 
 # Bicycle Kick Hero
 
-Use this skill to create a reusable AI video template for a football bicycle kick / overhead kick.
-
-## 球队选择规则（一键默认）
-
-首次用户不需要写 prompt，系统自动根据人脸族裔匹配球衣配色。
-
-**优先级：**
-1. 用户明确指定球队 → 用指定球队球衣配色
-2. 用户未指定 → 识别图片中人脸族裔，按配色表自动匹配
-3. 族裔识别不确定 → **默认日本队 🇯🇵**
-
-## 球队配色表
-
-| 族裔 | 国家队 | 球衣主色 | 短裤/袜子 |
-|------|--------|----------|----------|
-| 东亚脸 | 日本 🇯🇵 | 深海军蓝 | 白 + 蓝袜 |
-| 东亚脸 | 韩国 🇰🇷 | 红 | 白 + 红袜 |
-| 欧美脸 | 巴西 🇧🇷 | 黄 + 绿边 | 蓝 + 白袜 |
-| 欧美脸 | 阿根廷 🇦🇷 | 蓝白条纹 | 黑 + 白袜 |
-| 欧美脸 | 英格兰 🏴 | 白 + 深蓝 | 深蓝 + 白袜 |
-| 欧美脸 | 法国 🇫🇷 | 深蓝 + 金边 | 白 + 红袜 |
-| 非洲脸 | 非洲 🌍 | 绿 + 黄 | 绿 + 黄袜 |
-| 中东/南亚 | 通用 | 白 + 绿 | 白 + 绿袜 |
-
-**无真实品牌 logo，通用球衣设计。** The skill is platform-neutral and can output prompts for Makaron, Runway, Kling, Seedance, Gemini, Sora-style agents, other video agents, or a custom video pipeline.
+Use this skill to create a reusable AI video template for a football bicycle kick / overhead kick. The skill is platform-neutral and can output prompts for Makaron, Runway, Kling, Seedance, Gemini, Sora-style agents, other video agents, or a custom video pipeline.
 
 ## Core Motion
 

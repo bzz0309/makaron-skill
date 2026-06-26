@@ -11,35 +11,12 @@ metadata:
     tipsCount: 4
     modelPreference: [seedance, kling, gemini]
     defaultAspectRatio: "9:16"
+    defaultCoverStyle: sporty|dramatic|athletic
 ---
 
 # Diving Save Keeper
 
-Turn any portrait or sports reference into a cinematic goalkeeper diving save video.
-
-## 球队选择规则（一键默认）
-
-首次用户不需要写 prompt，系统自动根据人脸族裔匹配门将球衣配色，对手自动选对比色。
-
-**优先级：**
-1. 用户明确指定门将国家队 → 用指定门将队配色
-2. 用户未指定 → 识别图片中人脸族裔，按配色表自动匹配门将球衣
-3. 族裔识别不确定 → **默认日本门将 🇯🇵**
-
-## 门将配色表
-
-| 族裔 | 国家队 | 门将球衣主色 | 对手球衣色（自动对比） |
-|------|--------|------------|---------------------|
-| 东亚脸 | 日本 🇯🇵 | 深蓝 + 荧光绿边 | 白 + 红 |
-| 东亚脸 | 韩国 🇰🇷 | 红 + 黑 | 白 + 蓝 |
-| 欧美脸 | 巴西 🇧🇷 | 黄 + 绿 | 白 + 黑 |
-| 欧美脸 | 阿根廷 🇦🇷 | 黑 + 金 | 白 + 蓝 |
-| 欧美脸 | 英格兰 🏴 | 绿 + 白 | 红 + 白 |
-| 欧美脸 | 法国 🇫🇷 | 深蓝 + 银 | 白 + 黄 |
-| 非洲脸 | 非洲 🌍 | 橙 + 绿 | 白 + 黑 |
-| 中东/南亚 | 通用 | 白 + 绿 | 红 + 黑 |
-
-**门将手套保持荧光绿/黄。无真实品牌 logo。** The output is platform-neutral and works with Seedance, Kling, Gemini, Runway, Sora, or any video generation pipeline.
+Turn any portrait or sports reference into a cinematic goalkeeper diving save video. The output is platform-neutral and works with Seedance, Kling, Gemini, Runway, Sora, or any video generation pipeline.
 
 ## Workflow
 
